@@ -172,7 +172,6 @@ class Wit(object):
         self.references.update_head(commit_id)
 
     # init related code
-
     def _create_wit_dir(self, wit_parent_directory: str) -> None:
         os.mkdir(os.path.join(wit_parent_directory, WIT_DIRECTORY_NAME))
         os.mkdir(os.path.join(wit_parent_directory, WIT_DIRECTORY_NAME, IMAGES_DIRECTORY_NAME))

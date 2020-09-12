@@ -1,11 +1,10 @@
 import filecmp
 import os
 import shutil
+from typing import List, Optional
 
 from wit_consts import WIT_DIRECTORY_NAME
 from wit_exceptions import InvalidKeyValueFileDuplicateKeys, InvalidKeyValueFileFormat
-
-from typing import List, Optional
 
 
 class WitDirectoryCompare(object):
