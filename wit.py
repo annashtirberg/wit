@@ -1,16 +1,15 @@
 from __future__ import annotations
 
 import os
-import sys
 from typing import Optional, Set, TYPE_CHECKING
 
+from wit_argparse import WitArgparse, WitArguments
 from wit_checkout import WitCheckout
 from wit_classes import ImageDirectory, KeyValueFile
 from wit_commit import WitCommits
-from wit_consts import IMAGES_DIRECTORY_NAME, STAGING_DIRECTORY_NAME, WIT_COMMANDS_NAMES, WIT_DIRECTORY_NAME
+from wit_consts import IMAGES_DIRECTORY_NAME, STAGING_DIRECTORY_NAME, WIT_DIRECTORY_NAME
 from wit_diff import WitDiff
-from wit_exceptions import (InvalidWitArguments, InvalidWitCommand, MissingWitCheckoutArgument,
-                            MissingWitCommitMessage, NonExistingAddTarget, NoWitRootDirectory, WitNotLoadedException)
+from wit_exceptions import NonExistingAddTarget, NoWitRootDirectory
 from wit_graph import WitGraph
 from wit_status import WitStatus
 
@@ -131,22 +130,6 @@ class Wit(object):
         self.staging_area = WitStagingArea(self.wit_parent_directory)
         self._is_loaded = True
 
-    def verify_loaded(self):
-        if not self._is_loaded:
-            raise WitNotLoadedException()
-
-    def _print_usage(self):
-        pass
-
-    def get_command(self) -> str:
-        if 1 == len(sys.argv):
-            self._print_usage()
-            raise InvalidWitArguments()
-        command = sys.argv[1].lower()
-        if command not in WIT_COMMANDS_NAMES:
-            raise InvalidWitCommand(f"Unknown wit command {command}")
-        return command
-
     def _get_parent_directory(self, current_path: str) -> str:
         return os.path.abspath(os.path.join(current_path, os.path.pardir))
 
@@ -187,28 +170,21 @@ class Wit(object):
             self.wit_parent_directory = os.getcwd()
 
     # add related code
+    def add(self, arguments: WitArguments) -> None:
+        for path in arguments.add_paths:
+            absolute_path = os.path.abspath(path)
+            if not os.path.exists(absolute_path):
+                raise NonExistingAddTarget()
 
-    def add(self) -> None:
-        if len(sys.argv) < 3:
-            raise InvalidWitArguments
-        path = sys.argv[2]
-        absolute_path = os.path.abspath(path)
-        if not os.path.exists(absolute_path):
-            raise NonExistingAddTarget()
+            self._load(absolute_path)
 
-        self._load(absolute_path)
-
-        self.staging_area.add(absolute_path)
+            self.staging_area.add(absolute_path)
 
     # commit related code
-    def commit(self) -> None:
-        if len(sys.argv) < 3:
-            raise MissingWitCommitMessage()
-        message = sys.argv[2]
-
+    def commit(self, arguments: WitArguments) -> None:
         self._load()
 
-        self.commits.commit(message, self.references, self.staging_area)
+        self.commits.commit(arguments.message, self.references, self.staging_area)
 
     # status related code
     def status(self) -> None:
@@ -220,14 +196,10 @@ class Wit(object):
         status.print_status()
 
     # checkout related code
-    def checkout(self) -> None:
-        if len(sys.argv) < 3:
-            raise MissingWitCheckoutArgument()
-        argument = sys.argv[2]
-
+    def checkout(self, arguments: WitArguments) -> None:
         self._load()
 
-        checkout = WitCheckout(self, argument)
+        checkout = WitCheckout(self, arguments.commit_name)
         checkout.checkout()
 
     # graph related code
@@ -238,38 +210,32 @@ class Wit(object):
         graph.show()
 
     # diff related code
-    def diff(self) -> None:
+    def diff(self, arguments: WitArguments) -> None:
         self._load()
 
         diff = WitDiff(self)
-        diff.diff()
+        diff.diff(arguments)
 
 
 def main():
-    print(f"argv length: {len(sys.argv)}")
-    for i, arg in enumerate(sys.argv):
-        print(f"sys.argv[{i}]: '{arg}'")
+    argument_namespace = WitArgparse().parse()
+
     wit = Wit()
-    try:
-        command = wit.get_command()
-        if "init" == command:
-            wit.init()
-        elif "add" == command:
-            wit.add()
-        elif "commit" == command:
-            wit.commit()
-        elif "status" == command:
-            wit.status()
-        elif "checkout" == command:
-            wit.checkout()
-        elif "graph" == command:
-            wit.graph()
-        elif "diff" == command:
-            wit.diff()
-    except InvalidWitArguments:
-        print(f"argv length: {len(sys.argv)}")
-        for i, arg in enumerate(sys.argv):
-            print(f"sys.argv[{i}]: '{arg}'")
+
+    if "init" == argument_namespace.command:
+        wit.init()
+    elif "add" == argument_namespace.command:
+        wit.add(argument_namespace)
+    elif "commit" == argument_namespace.command:
+        wit.commit(argument_namespace)
+    elif "status" == argument_namespace.command:
+        wit.status()
+    elif "checkout" == argument_namespace.command:
+        wit.checkout(argument_namespace)
+    elif "graph" == argument_namespace.command:
+        wit.graph()
+    elif "diff" == argument_namespace.command:
+        wit.diff(argument_namespace)
 
 
 if __name__ == '__main__':

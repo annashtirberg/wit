@@ -53,11 +53,14 @@ class WitCheckout(object):
         status = WitStatus(head_commit, self.wit.staging_area)
 
         if 0 < len(status.changes_to_be_committed):
-            print("Changes to be committed")
+            print("Changes to be committed:")
             for i, changes in enumerate(status.changes_to_be_committed):
                 print(f"{i}) {changes}")
             raise ChangesToBeCommitCheckoutError()
         if 0 < len(status.changes_not_staged_for_commit):
+            print("Changes not staged for commit:")
+            for i, changes in enumerate(status.changes_not_staged_for_commit):
+                print(f"{i}) {changes}")
             raise ChangesNotStagedForCommitCheckoutError()
 
         self._remove_tracked_files(status)

@@ -30,19 +30,11 @@ class NonExistingAddTarget(ValueError):
 
 
 # commit related exceptions
-class MissingWitCommitMessage(InvalidWitArguments):
-    pass
-
-
 class CommitingSameFilesException(ValueError):
     pass
 
 
 # checkout related code
-class MissingWitCheckoutArgument(IndexError):
-    pass
-
-
 class InvalidCheckoutArgument(KeyError):
     pass
 
@@ -52,4 +44,13 @@ class ChangesToBeCommitCheckoutError(ValueError):
 
 
 class ChangesNotStagedForCommitCheckoutError(ValueError):
+    pass
+
+
+# diff related code
+class WitDiffNoSuchCommitException(KeyError):
+    pass
+
+
+class WitDiffCommitArgumentNotSpecificEnoughException(IndexError):
     pass

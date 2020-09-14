@@ -2,25 +2,14 @@ from __future__ import annotations
 
 import difflib
 import os
-import sys
 from typing import List, Optional, Tuple, TYPE_CHECKING
 
+from wit_exceptions import WitDiffCommitArgumentNotSpecificEnoughException, WitDiffNoSuchCommitException
 if TYPE_CHECKING:
     from wit import Wit
+    from wit_argparse import WitArguments
     from wit_classes import ImageDirectory
     from wit_commit import WitCommit
-
-
-class WitDiffNoSuchCommitException(KeyError):
-    pass
-
-
-class WitDiffCommitArgumentNotSpecificEnoughException(IndexError):
-    pass
-
-
-class WitDiffInvalidArgumentsException(IndexError):
-    pass
 
 
 class Diff(object):
@@ -81,22 +70,22 @@ class WitDiff(Diff):
         super().__init__()
         self.wit = wit
 
-    def get_working_directory_path(self) -> ImageDirectory:
+    def _get_working_directory(self) -> ImageDirectory:
         return self.wit.wit_parent_directory
 
-    def get_staging_area_path(self) -> ImageDirectory:
+    def _get_staging_area(self) -> ImageDirectory:
         return self.wit.staging_area
 
-    def get_named_commit_image_directory(self, commit_name) -> WitCommit:
+    def _get_named_commit_image_directory(self, commit_name) -> ImageDirectory:
         # check if commit_name is a branch name
         if commit_name in self.wit.references:
             branch_commit_id = self.wit.references[commit_name]
             branch_commit = self.wit.commits[branch_commit_id]  # type: WitCommit
-            return branch_commit
+            return branch_commit.commit_dir
         # otherwise check if it is a commit id or the beginning of a commit id
         else:
             commit = self._get_commit_by_partial_id(commit_name)
-            return commit
+            return commit.commit_dir
 
     def _get_commit_by_partial_id(self, partial_commit_id: str) -> WitCommit:
         commit_ids = self.wit.commits.keys()
@@ -109,62 +98,21 @@ class WitDiff(Diff):
             commit = self.wit.commits[fitting_commit_ids[0]]  # type: WitCommit
             return commit
 
-    def _parse_arguments(self) -> Tuple[ImageDirectory, ImageDirectory]:
-        is_cached = False
-        arguments = sys.argv[2:]
-        argument1 = None  # type: Optional[str]
-        argument2 = None  # type: Optional[str]
-        old_directory = None  # type: Optional[ImageDirectory]
-        new_directory = None  # type: Optional[ImageDirectory]
-        # argv[0] == "wit.py"
-        # argv[1] == "diff"
-        # argv[2] might be "--cached"
-        # argv[2/3] might be the first argument
-        # argv[3/4] might e the second argument
+    def _parse_arguments(self, arguments: WitArguments) -> Tuple[ImageDirectory, ImageDirectory]:
+        old_directory = self._get_named_commit_image_directory("HEAD")
+        new_directory = self._get_working_directory()
+        if arguments.is_cached:
+            new_directory = self._get_staging_area()
 
-        if 3 <= len(sys.argv):
-            if "--cached" == sys.argv[2]:
-                is_cached = True
-                arguments = sys.argv[3:]
+        if arguments.old_commit is not None:
+            old_directory = self._get_named_commit_image_directory(arguments.old_commit)
+        if arguments.new_commit is not None:
+            new_directory = self._get_named_commit_image_directory(arguments.new_commit)
 
-        if 1 <= len(arguments):
-            argument1 = arguments[0]
-        if 2 <= len(arguments):
-            argument2 = arguments[1]
-
-        if is_cached:
-            new_directory = self.wit.staging_area
-            if argument1 is None:
-                # wit diff --cached
-                # compare HEAD<->staging_area
-                old_directory = self.get_named_commit_image_directory("HEAD").commit_dir
-            elif argument2 is None:
-                # wit diff --cached arg1
-                # compare named-commit<->staging_area
-                old_directory = self.get_named_commit_image_directory(argument1).commit_dir
-            else:
-                # wit diff --cached arg1 arg2
-                # this is not a valid option
-                raise WitDiffInvalidArgumentsException("wit diff -cached can only handle a single argument")
-        else:
-            new_directory = self.wit.wit_parent_directory
-            if argument1 is None:
-                # wit diff
-                # compare staging_area<->working_directory
-                old_directory = self.wit.staging_area
-            elif argument2 is None:
-                # wit diff arg1
-                # compare named-commit<->working_directory
-                old_directory = self.get_named_commit_image_directory(argument1).commit_dir
-            else:
-                # wit diff arg1 arg2
-                # compare named-commit1<->named-commit2
-                old_directory = self.get_named_commit_image_directory(argument1).commit_dir
-                new_directory = self.get_named_commit_image_directory(argument2).commit_dir
         return old_directory, new_directory
 
-    def diff(self):
-        old_directory, new_directory = self._parse_arguments()
+    def diff(self, arguments: WitArguments):
+        old_directory, new_directory = self._parse_arguments(arguments)
 
         diff = old_directory.compare_directory(new_directory)
 
