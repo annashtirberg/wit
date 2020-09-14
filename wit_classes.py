@@ -62,7 +62,7 @@ class ImageDirectory(object):
     def get_path(self) -> str:
         return self._directory_path
 
-    def get_relative_path(self, path: str, other: Optional['ImageDirectory'] = None):
+    def get_relative_path(self, path: str, other: Optional['ImageDirectory'] = None) -> str:
         if other is None:
             return os.path.relpath(path, self.get_path())
         else:

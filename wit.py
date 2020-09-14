@@ -167,7 +167,7 @@ class Wit(object):
             self._load()
         except NoWitRootDirectory:
             self._create_wit_dir(os.getcwd())
-            self.wit_parent_directory = os.getcwd()
+            self.wit_parent_directory_path = os.getcwd()
 
     # add related code
     def add(self, arguments: WitArguments) -> None:

@@ -94,7 +94,7 @@ class WitCommit(object):
     def get_parent(self) -> Optional['WitCommit']:
         parent_id = self.commit_file.get_parent_id()
         if parent_id is not None:
-            return WitCommit(self._image_dir, self.commit_file.get_parent_id())
+            return WitCommit(self._image_dir, parent_id)
         else:
             return None
 

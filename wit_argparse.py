@@ -44,4 +44,4 @@ class WitArgparse(object):
         self.parser = parser
 
     def parse(self) -> WitArguments:
-        return self.parser.parse_args()
+        return self.parser.parse_args()  # type: WitArguments
