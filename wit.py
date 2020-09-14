@@ -8,10 +8,12 @@ from wit_checkout import WitCheckout
 from wit_classes import ImageDirectory, KeyValueFile
 from wit_commit import WitCommits
 from wit_consts import IMAGES_DIRECTORY_NAME, STAGING_DIRECTORY_NAME, WIT_COMMANDS_NAMES, WIT_DIRECTORY_NAME
+from wit_diff import WitDiff
 from wit_exceptions import (InvalidWitArguments, InvalidWitCommand, MissingWitCheckoutArgument,
                             MissingWitCommitMessage, NonExistingAddTarget, NoWitRootDirectory, WitNotLoadedException)
 from wit_graph import WitGraph
 from wit_status import WitStatus
+
 if TYPE_CHECKING:
     from wit_commit import WitCommit
 
@@ -235,6 +237,13 @@ class Wit(object):
         graph = WitGraph(self)
         graph.show()
 
+    # diff related code
+    def diff(self) -> None:
+        self._load()
+
+        diff = WitDiff(self)
+        diff.diff()
+
 
 def main():
     print(f"argv length: {len(sys.argv)}")
@@ -255,6 +264,8 @@ def main():
             wit.checkout()
         elif "graph" == command:
             wit.graph()
+        elif "diff" == command:
+            wit.diff()
     except InvalidWitArguments:
         print(f"argv length: {len(sys.argv)}")
         for i, arg in enumerate(sys.argv):
