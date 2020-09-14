@@ -171,7 +171,7 @@ class Wit(object):
 
     # add related code
     def add(self, arguments: WitArguments) -> None:
-        for path in arguments.add_paths:
+        for path in arguments.add_paths[0]:
             absolute_path = os.path.abspath(path)
             if not os.path.exists(absolute_path):
                 raise NonExistingAddTarget()
