@@ -106,7 +106,8 @@ class WitDiff(Diff):
         elif 1 < len(fitting_commit_ids):
             raise WitDiffCommitArgumentNotSpecificEnoughException(partial_commit_id)
         else:
-            return self.wit.commits[fitting_commit_ids[0]]
+            commit = self.wit.commits[fitting_commit_ids[0]]  # type: WitCommit
+            return commit
 
     def _parse_arguments(self) -> Tuple[ImageDirectory, ImageDirectory]:
         is_cached = False
